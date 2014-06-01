@@ -1,32 +1,27 @@
 package openmods;
 
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import cpw.mods.fml.common.FMLLog;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 
 public final class Log {
 	private Log() {}
 
-	private static final Logger logger;
-
-	static {
-		logger = Logger.getLogger("OpenMods");
-		logger.setLevel(Level.ALL);
-
-		Logger rootLogger = FMLLog.getLogger();
-		if (rootLogger != null) {
-			logger.setParent(rootLogger);
-		} else {
-			ConsoleHandler handler = new ConsoleHandler();
-			handler.setLevel(Level.ALL);
-			logger.addHandler(handler);
-			logger.setUseParentHandlers(false);
-		}
-	}
+  /**
+   * @see openmods.OpenMods#preInit(cpw.mods.fml.common.event.FMLPreInitializationEvent)
+   */
+	private static Logger logger = FMLLog.getLogger();
 
 	private static final Throwable stackInfo = new Throwable();
+
+  public static void setLogger(Logger logger) {
+    Log.logger = logger;
+  }
 
 	private static String getLogLocation(Throwable t) {
 		// first element is always log function
@@ -51,11 +46,11 @@ public final class Log {
 	}
 
 	public static void severe(String format, Object... data) {
-		logWithCaller(stackInfo.fillInStackTrace(), Level.SEVERE, format, data);
+		logWithCaller(stackInfo.fillInStackTrace(), Level.FATAL, format, data);
 	}
 
 	public static void warn(String format, Object... data) {
-		logWithCaller(stackInfo.fillInStackTrace(), Level.WARNING, format, data);
+		logWithCaller(stackInfo.fillInStackTrace(), Level.WARN, format, data);
 	}
 
 	public static void info(String format, Object... data) {
@@ -63,15 +58,11 @@ public final class Log {
 	}
 
 	public static void fine(String format, Object... data) {
-		logWithCaller(stackInfo.fillInStackTrace(), Level.FINE, format, data);
+		logWithCaller(stackInfo.fillInStackTrace(), Level.DEBUG, format, data);
 	}
 
 	public static void finer(String format, Object... data) {
-		logWithCaller(stackInfo.fillInStackTrace(), Level.FINER, format, data);
-	}
-
-	public static void finest(String format, Object... data) {
-		logWithCaller(stackInfo.fillInStackTrace(), Level.FINEST, format, data);
+		logWithCaller(stackInfo.fillInStackTrace(), Level.TRACE, format, data);
 	}
 
 	public static void log(Level level, Throwable ex, String format, Object... data) {
@@ -79,10 +70,10 @@ public final class Log {
 	}
 
 	public static void severe(Throwable ex, String format, Object... data) {
-		log(Level.SEVERE, ex, format, data);
+		log(Level.FATAL, ex, format, data);
 	}
 
 	public static void warn(Throwable ex, String format, Object... data) {
-		log(Level.WARNING, ex, format, data);
+		log(Level.WARN, ex, format, data);
 	}
 }

@@ -5,8 +5,9 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Map;
 
-import net.minecraftforge.common.*;
-import net.minecraftforge.common.Property.Type;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.config.*;
+import net.minecraftforge.common.config.Property.Type;
 import openmods.Log;
 import openmods.utils.io.IStringSerializable;
 import openmods.utils.io.StringConversionException;

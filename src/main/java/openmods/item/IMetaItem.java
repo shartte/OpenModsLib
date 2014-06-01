@@ -2,16 +2,17 @@ package openmods.item;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IconRegister;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.Icon;
+import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
 
 public interface IMetaItem {
 
-	public Icon getIcon();
+	public IIcon getIcon();
 
 	public String getUnlocalizedName(ItemStack stack);
 
@@ -21,11 +22,11 @@ public interface IMetaItem {
 
 	public ItemStack onItemRightClick(ItemStack itemStack, EntityPlayer player, World world);
 
-	public void registerIcons(IconRegister register);
+	public void registerIcons(IIconRegister register);
 
 	public void addRecipe();
 
-	public void addToCreativeList(int itemId, int meta, List<ItemStack> result);
+	public void addToCreativeList(Item item, int meta, List<ItemStack> result);
 
 	public boolean hasEffect(int renderPass);
 }

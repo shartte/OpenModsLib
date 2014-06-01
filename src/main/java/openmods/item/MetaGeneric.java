@@ -2,26 +2,28 @@ package openmods.item;
 
 import java.util.List;
 
-import net.minecraft.client.renderer.texture.IconRegister;
+import cpw.mods.fml.common.registry.GameRegistry;
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.item.crafting.FurnaceRecipes;
 import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.util.Icon;
+import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
 
 public class MetaGeneric implements IMetaItem {
 
 	public static class SmeltingRecipe {
-		public final int itemId;
+		public final Item item;
 		public final int itemMeta;
 		public final ItemStack result;
 		public final float experience;
 
-		private SmeltingRecipe(int itemId, int itemMeta, ItemStack result, float experience) {
-			this.itemId = itemId;
+		private SmeltingRecipe(Item item, int itemMeta, ItemStack result, float experience) {
+			this.item = item;
 			this.itemMeta = itemMeta;
 			this.result = result.copy();
 			this.experience = experience;
@@ -30,7 +32,7 @@ public class MetaGeneric implements IMetaItem {
 
 	private final String mod;
 	private final String name;
-	private Icon icon;
+	private IIcon icon;
 	private Object[] recipes;
 	private boolean visibleInCreative = true;
 
@@ -46,7 +48,7 @@ public class MetaGeneric implements IMetaItem {
 	}
 
 	@Override
-	public Icon getIcon() {
+	public IIcon getIcon() {
 		return icon;
 	}
 
@@ -71,11 +73,11 @@ public class MetaGeneric implements IMetaItem {
 	}
 
 	@Override
-	public void registerIcons(IconRegister register) {
+	public void registerIcons(IIconRegister register) {
 		registerIcon(register, name);
 	}
 
-	protected void registerIcon(IconRegister register, String name) {
+	protected void registerIcon(IIconRegister register, String name) {
 		icon = register.registerIcon(String.format("%s:%s", mod, name));
 	}
 
@@ -83,13 +85,12 @@ public class MetaGeneric implements IMetaItem {
 	public void addRecipe() {
 		if (recipes == null) return;
 
-		final FurnaceRecipes furnaceRecipes = FurnaceRecipes.smelting();
 		@SuppressWarnings("unchecked")
 		final List<IRecipe> craftingRecipes = CraftingManager.getInstance().getRecipeList();
 		for (Object tmp : recipes) {
 			if (tmp instanceof SmeltingRecipe) {
 				SmeltingRecipe recipe = (SmeltingRecipe)tmp;
-				furnaceRecipes.addSmelting(recipe.itemId, recipe.itemMeta, recipe.result, recipe.experience);
+        GameRegistry.addSmelting(new ItemStack(recipe.item, recipe.itemMeta), recipe.result, recipe.experience);
 			} else if (tmp instanceof IRecipe) {
 				craftingRecipes.add((IRecipe)tmp);
 			} else throw new IllegalArgumentException("Invalid recipe object: "
@@ -98,9 +99,9 @@ public class MetaGeneric implements IMetaItem {
 	}
 
 	@Override
-	public void addToCreativeList(int itemId, int meta, List<ItemStack> result) {
+	public void addToCreativeList(Item item, int meta, List<ItemStack> result) {
 		if (visibleInCreative) {
-			result.add(new ItemStack(itemId, 1, meta));
+			result.add(new ItemStack(item, 1, meta));
 		}
 	}
 

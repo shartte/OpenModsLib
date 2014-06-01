@@ -7,12 +7,9 @@ import net.minecraft.world.biome.BiomeGenBase;
 
 public class BlockProperties {
 
-	public static int getBlockID(Coord c, World world) {
-		return world.getBlockId(c.x, c.y, c.z);
-	}
 
 	public static Block getBlock(Coord c, World world) {
-		return Block.blocksList[getBlockID(c, world)];
+		return world.getBlock(c.x, c.y, c.z);
 	}
 
 	public static int getBlockMetadata(Coord c, World world) {
@@ -29,11 +26,7 @@ public class BlockProperties {
 	}
 
 	public static boolean isBlockNormalCube(Coord c, World world) {
-		return world.isBlockNormalCube(c.x, c.y, c.z);
-	}
-
-	public static boolean isBlockOpaqueCube(Coord c, World world) {
-		return world.isBlockOpaqueCube(c.x, c.y, c.z);
+    return getBlock(c, world).isBlockNormalCube();
 	}
 
 	public static boolean isWood(Coord c, World world) {

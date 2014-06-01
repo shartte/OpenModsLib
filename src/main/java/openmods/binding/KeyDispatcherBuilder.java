@@ -3,6 +3,10 @@ package openmods.binding;
 import java.util.List;
 import java.util.Map;
 
+import cpw.mods.fml.client.FMLClientHandler;
+import cpw.mods.fml.client.registry.ClientRegistry;
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.gameevent.InputEvent;
 import net.minecraft.client.settings.KeyBinding;
 
 import com.google.common.collect.Lists;
@@ -17,18 +21,16 @@ public class KeyDispatcherBuilder {
 		return this;
 	}
 
-	public KeyDispatcher build() {
+	public void register() {
 		Map<KeyBinding, ActionBind> bindingMap = Maps.newIdentityHashMap();
-		KeyBinding[] bindingsArray = new KeyBinding[bindings.size()];
-		boolean repeatings[] = new boolean[bindings.size()];
-		for (int i = 0; i < bindings.size(); i++) {
-			ActionBind action = bindings.get(i);
-			KeyBinding binding = action.createBinding();
-			bindingMap.put(binding, action);
-			bindingsArray[i] = binding;
-			repeatings[i] = action.isRepeatable();
-		}
+    for (ActionBind action : bindings) {
+      KeyBinding binding = action.createBinding();
+      bindingMap.put(binding, action);
+      ClientRegistry.registerKeyBinding(binding);
+    }
 
-		return new KeyDispatcher(bindingsArray, repeatings, bindingMap);
-	}
+    KeyDispatcher dispatcher = new KeyDispatcher(bindingMap);
+    FMLCommonHandler.instance().bus().register(dispatcher);
+  }
+
 }

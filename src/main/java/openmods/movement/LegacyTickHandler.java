@@ -2,32 +2,27 @@ package openmods.movement;
 
 import java.util.EnumSet;
 
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
+import cpw.mods.fml.relauncher.Side;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityClientPlayerMP;
-import cpw.mods.fml.common.ITickHandler;
-import cpw.mods.fml.common.TickType;
 
-public class LegacyTickHandler implements ITickHandler {
+public class LegacyTickHandler {
 
-	@Override
-	public void tickStart(EnumSet<TickType> type, Object... tickData) {
-		if (type.contains(TickType.CLIENT)) {
-			EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
-			if (player != null) PlayerMovementManager.updateMovementState(player.movementInput, player);
-		}
-	}
+  @SubscribeEvent
+  public void tickEvent(TickEvent tickEvent) {
 
-	@Override
-	public void tickEnd(EnumSet<TickType> type, Object... tickData) {}
+    if (tickEvent.side != Side.CLIENT)
+      return;
 
-	@Override
-	public EnumSet<TickType> ticks() {
-		return EnumSet.of(TickType.CLIENT);
-	}
+    if (tickEvent.phase == TickEvent.Phase.START) {
+      EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
+      if (player != null) {
+        PlayerMovementManager.updateMovementState(player.movementInput, player);
+      }
+    }
 
-	@Override
-	public String getLabel() {
-		return "OpenModsMovementManager";
-	}
+  }
 
 }

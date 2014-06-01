@@ -12,8 +12,8 @@ import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraftforge.common.Configuration;
-import net.minecraftforge.common.Property;
+import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.config.Property;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import openmods.Log;
@@ -79,33 +79,24 @@ public class ConfigProcessing {
 		return configs.get(modId.toLowerCase());
 	}
 
-	private static void getBlock(Configuration configFile, Field field, String description) {
+	private static void getBlockEnabled(Configuration configFile, Field field, String description) {
 		try {
-			int defaultValue = field.getInt(null);
-			Property prop = configFile.getBlock("block", field.getName(), defaultValue, description);
-			field.set(null, prop.getInt());
+			boolean defaultValue = field.getBoolean(null);
+			Property prop = configFile.get("block", field.getName(), defaultValue, description);
+			field.set(null, prop.getBoolean(defaultValue));
 		} catch (Throwable e) {
 			throw Throwables.propagate(e);
 		}
 	}
 
-	private static void getItem(Configuration configFile, Field field, String description) {
+	private static void getItemEnabled(Configuration configFile, Field field, String description) {
 		try {
-			int defaultValue = field.getInt(null);
-			Property prop = configFile.getItem("item", field.getName(), defaultValue, description);
-			field.set(null, prop.getInt());
+			boolean defaultValue = field.getBoolean(null);
+			Property prop = configFile.get("item", field.getName(), defaultValue, description);
+			field.set(null, prop.getBoolean(defaultValue));
 		} catch (Throwable e) {
 			throw Throwables.propagate(e);
 		}
-	}
-
-	public static boolean canRegisterBlock(int blockId) {
-		if (blockId > 0) {
-			Preconditions.checkState(Block.blocksList[blockId] == null,
-					"OpenBlocks tried to register a block for ID: %s but it was in use", blockId);
-			return true;
-		}
-		return false; // Block disabled, fail silently
 	}
 
 	public static void processAnnotations(File configFile, String modId, Configuration config, Class<?> klazz) {
@@ -115,17 +106,17 @@ public class ConfigProcessing {
 
 		for (Field f : klazz.getFields()) {
 			{
-				ItemId a = f.getAnnotation(ItemId.class);
+				ItemEnabled a = f.getAnnotation(ItemEnabled.class);
 				if (a != null) {
-					getItem(config, f, a.description());
+					getItemEnabled(config, f, a.description());
 					continue;
 				}
 			}
 
 			{
-				BlockId a = f.getAnnotation(BlockId.class);
+				BlockEnabled a = f.getAnnotation(BlockEnabled.class);
 				if (a != null) {
-					getBlock(config, f, a.description());
+					getBlockEnabled(config, f, a.description());
 				}
 			}
 
@@ -143,8 +134,7 @@ public class ConfigProcessing {
 				A annotation = f.getAnnotation(annotationClass);
 				if (annotation != null) {
 					try {
-						@SuppressWarnings("unchecked")
-						I entry = (I)f.get(null);
+						I entry = fieldClass.cast(f.get(null));
 						if (entry != null) processor.process(entry, annotation);
 					} catch (Exception e) {
 						throw Throwables.propagate(e);
@@ -198,7 +188,7 @@ public class ConfigProcessing {
 				if (!unlocalizedName.equals(RegisterBlock.NONE)) {
 					if (unlocalizedName.equals(RegisterBlock.DEFAULT)) unlocalizedName = dotName(mod, name);
 					else unlocalizedName = dotName(mod, unlocalizedName);
-					block.setUnlocalizedName(unlocalizedName);
+          block.setBlockName(unlocalizedName);
 				}
 
 				if (teClass != null) GameRegistry.registerTileEntity(teClass, blockName);

@@ -1,41 +1,35 @@
 package openmods.binding;
 
-import java.util.EnumSet;
 import java.util.Map;
 
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.InputEvent;
 import net.minecraft.client.settings.KeyBinding;
-import cpw.mods.fml.client.registry.KeyBindingRegistry.KeyHandler;
-import cpw.mods.fml.common.TickType;
 
-public class KeyDispatcher extends KeyHandler {
+class KeyDispatcher {
 
 	private final Map<KeyBinding, ActionBind> bindings;
 
-	KeyDispatcher(KeyBinding[] keyBindings, boolean[] repeatings, Map<KeyBinding, ActionBind> bindings) {
-		super(keyBindings, repeatings);
+	KeyDispatcher(Map<KeyBinding, ActionBind> bindings) {
 		this.bindings = bindings;
 	}
 
-	@Override
-	public String getLabel() {
-		return "OpenModsKeyHandler";
-	}
+ // TODO: Port this
+//	@Override
+//	public void keyDown(KeyBinding kb, boolean tickEnd, boolean isRepeat) {
+//		ActionBind binding = bindings.get(kb);
+//		if (binding != null) binding.keyDown(tickEnd, isRepeat);
+//	}
+//
+//	@Override
+//	public void keyUp(KeyBinding kb, boolean tickEnd) {
+//		ActionBind binding = bindings.get(kb);
+//		if (binding != null) binding.keyUp(tickEnd);
+//	}
 
-	@Override
-	public void keyDown(EnumSet<TickType> types, KeyBinding kb, boolean tickEnd, boolean isRepeat) {
-		ActionBind binding = bindings.get(kb);
-		if (binding != null) binding.keyDown(tickEnd, isRepeat);
-	}
-
-	@Override
-	public void keyUp(EnumSet<TickType> types, KeyBinding kb, boolean tickEnd) {
-		ActionBind binding = bindings.get(kb);
-		if (binding != null) binding.keyUp(tickEnd);
-	}
-
-	@Override
-	public EnumSet<TickType> ticks() {
-		return EnumSet.of(TickType.CLIENT);
-	}
+  @SubscribeEvent
+  public void onInputEvent(InputEvent e) {
+    // TODO: Handle the key event
+  }
 
 }

@@ -83,13 +83,13 @@ public class SidedInventoryAdapter implements ISidedInventory {
 	}
 
 	@Override
-	public String getInvName() {
-		return inventory.getInvName();
+	public String getInventoryName() {
+		return inventory.getInventoryName();
 	}
 
 	@Override
-	public boolean isInvNameLocalized() {
-		return inventory.isInvNameLocalized();
+	public boolean hasCustomInventoryName() {
+		return inventory.hasCustomInventoryName();
 	}
 
 	@Override
@@ -103,14 +103,14 @@ public class SidedInventoryAdapter implements ISidedInventory {
 	}
 
 	@Override
-	public void openChest() {}
+	public void openInventory() {}
 
 	@Override
-	public void closeChest() {}
+	public void closeInventory() {}
 
 	@Override
-	public void onInventoryChanged() {
-		inventory.onInventoryChanged();
+	public void markDirty() {
+		inventory.markDirty();
 	}
 
 	@Override

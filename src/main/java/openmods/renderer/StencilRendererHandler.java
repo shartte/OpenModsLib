@@ -3,7 +3,7 @@ package openmods.renderer;
 import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.ForgeSubscribe;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 public abstract class StencilRendererHandler {
 
@@ -19,7 +19,7 @@ public abstract class StencilRendererHandler {
 		renderThisTick = true;
 	}
 
-	@ForgeSubscribe
+	@SubscribeEvent
 	public void drawStenciledBackground(RenderWorldLastEvent evt) {
 		if (!renderThisTick) return;
 		renderThisTick = false;

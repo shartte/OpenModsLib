@@ -5,6 +5,7 @@ import java.util.Set;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import net.minecraft.world.World;
 
 public class ObjectTester<T> implements ITester<T> {
 	public static class ClassTester<T> implements ITester<T> {
@@ -22,7 +23,7 @@ public class ObjectTester<T> implements ITester<T> {
 		}
 
 		@Override
-		public Result test(T o) {
+		public Result test(World world, int x, int y, int z, T o) {
 			return cls.isAssignableFrom(o.getClass())? onMatch : Result.CONTINUE;
 		}
 	}
@@ -56,7 +57,7 @@ public class ObjectTester<T> implements ITester<T> {
 		}
 
 		@Override
-		public Result test(T o) {
+		public Result test(World world, int x, int y, int z, T o) {
 			return names.contains(o.getClass().getName())? onMatch : Result.CONTINUE;
 		}
 	}
@@ -73,16 +74,16 @@ public class ObjectTester<T> implements ITester<T> {
 	}
 
 	@Override
-	public Result test(T o) {
+	public Result test(World world, int x, int y, int z, T o) {
 		for (ITester<T> tester : testers) {
-			Result r = tester.test(o);
+			Result r = tester.test(world, x, y, z, o);
 			if (r != Result.CONTINUE) return r;
 		}
 
 		return Result.CONTINUE;
 	}
 
-	public boolean check(T o) {
-		return test(o) == Result.ACCEPT;
+	public boolean check(World world, int x, int y, int z, T o) {
+		return test(world, x, y, z, o) == Result.ACCEPT;
 	}
 }

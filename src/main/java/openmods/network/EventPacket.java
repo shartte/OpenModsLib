@@ -6,15 +6,11 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
+import cpw.mods.fml.common.eventhandler.Event;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.network.INetworkManager;
-import net.minecraft.network.packet.Packet;
-import net.minecraftforge.event.Event;
 import openmods.Log;
-import openmods.OpenMods;
 import openmods.network.events.TileEntityMessageEventPacket;
-import cpw.mods.fml.common.network.Player;
 
 public abstract class EventPacket extends Event {
 
@@ -44,11 +40,6 @@ public abstract class EventPacket extends Event {
 		}
 
 		@Override
-		public boolean isChunked() {
-			return false;
-		}
-
-		@Override
 		public int getId() {
 			return EventIdRanges.BASE_ID_START + ordinal();
 		}
@@ -59,9 +50,7 @@ public abstract class EventPacket extends Event {
 			EventPacketManager.registerType(type);
 	}
 
-	public INetworkManager manager;
-
-	public Player player;
+	public EntityPlayer player;
 
 	public abstract IEventPacketType getType();
 
@@ -74,8 +63,11 @@ public abstract class EventPacket extends Event {
 	public void reply(EventPacket reply) {
 		boolean isRemote = !(player instanceof EntityPlayerMP);
 		if (!getType().getDirection().validateSend(isRemote)) {
-			for (Packet packet : EventPacketManager.serializeEvent(reply))
-				manager.addToSendQueue(packet);
+      if (isRemote) {
+        EventPacketManager.sendToServer(reply);
+      } else {
+        EventPacketManager.sendToPlayer((EntityPlayerMP) player, reply);
+      }
 		}
 		else Log.warn("Invalid sent direction for packet '%s'", this);
 	}
@@ -96,29 +88,21 @@ public abstract class EventPacket extends Event {
 		return true;
 	}
 
-	public void sendToPlayer(Player player) {
-		if (checkSendToClient()) {
-			for (Packet packet : EventPacketManager.serializeEvent(this))
-				OpenMods.proxy.sendPacketToPlayer(player, packet);
-		}
-	}
-
 	public void sendToPlayer(EntityPlayer player) {
-		sendToPlayer((Player)player);
+		if (checkSendToClient()) {
+      EventPacketManager.sendToPlayer((EntityPlayerMP) player, this);
+		}
 	}
 
 	public void sendToPlayers(Collection<EntityPlayer> players) {
 		if (checkSendToClient()) {
-			for (Packet packet : EventPacketManager.serializeEvent(this))
-				for (EntityPlayer player : players)
-					OpenMods.proxy.sendPacketToPlayer((Player)player, packet);
+      EventPacketManager.sendToPlayers(players, this);
 		}
 	}
 
 	public void sendToServer() {
 		if (checkSendToServer()) {
-			for (Packet packet : EventPacketManager.serializeEvent(this))
-				OpenMods.proxy.sendPacketToServer(packet);
-		}
+      EventPacketManager.sendToServer(this);
+    }
 	}
 }

@@ -2,7 +2,7 @@ package openmods;
 
 import java.io.File;
 
-import net.minecraftforge.common.Configuration;
+import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.MinecraftForge;
 import openmods.config.CommandConfig;
 import openmods.config.ConfigProcessing;
@@ -11,21 +11,14 @@ import openmods.fakeplayer.FakePlayerPool;
 import openmods.integration.Integration;
 import openmods.integration.modules.BuildCraftPipes;
 import openmods.network.EventPacket;
-import openmods.network.PacketHandler;
-import openmods.network.TinyPacketHandler;
 import openmods.network.events.TileEntityEventHandler;
 import openmods.proxy.IOpenModsProxy;
-import openmods.sync.SyncableManager;
 import cpw.mods.fml.common.*;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.Mod.Instance;
 import cpw.mods.fml.common.event.*;
-import cpw.mods.fml.common.network.NetworkMod;
 
 @Mod(modid = "OpenMods", name = "OpenMods", version = "0.5", dependencies = "required-after:OpenModsCore")
-@NetworkMod(serverSideRequired = true, clientSideRequired = false,
-		channels = { PacketHandler.CHANNEL_SYNC, PacketHandler.CHANNEL_EVENTS }, packetHandler = PacketHandler.class,
-		tinyPacketHandler = TinyPacketHandler.class)
 public class OpenMods {
 
 	@Instance(value = "OpenMods")
@@ -34,10 +27,10 @@ public class OpenMods {
 	@SidedProxy(clientSide = "openmods.proxy.OpenClientProxy", serverSide = "openmods.proxy.OpenServerProxy")
 	public static IOpenModsProxy proxy;
 
-	public static SyncableManager syncableManager;
-
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent evt) {
+    Log.setLogger(evt.getModLog());
+
 		EventPacket.registerCorePackets();
 
 		final File configFile = evt.getSuggestedConfigurationFile();
@@ -56,7 +49,6 @@ public class OpenMods {
 
 	@EventHandler
 	public void init(FMLInitializationEvent evt) {
-		syncableManager = new SyncableManager();
 		proxy.init();
 	}
 

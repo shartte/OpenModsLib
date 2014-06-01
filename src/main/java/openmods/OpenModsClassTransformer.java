@@ -29,7 +29,7 @@ public class OpenModsClassTransformer implements IClassTransformer {
 		if (applyMovementTransformer && transformedName.equals("net.minecraft.client.entity.EntityPlayerSP")) return VisitorHelper.apply(bytes, ClassWriter.COMPUTE_FRAMES, new TransformProvider() {
 			@Override
 			public ClassVisitor createVisitor(ClassVisitor cv) {
-				Log.info("Trying to apply movement callback (class: %s)", name);
+        OpenModsCorePlugin.log.info("Trying to apply movement callback (class: %s)", name);
 				return new MovementPatcher(name, cv);
 			}
 		});
@@ -37,7 +37,7 @@ public class OpenModsClassTransformer implements IClassTransformer {
 		if (applyMapgenFix && transformedName.equals("net.minecraft.world.gen.structure.MapGenStructure")) return VisitorHelper.apply(bytes, ClassWriter.COMPUTE_FRAMES, new TransformProvider() {
 			@Override
 			public ClassVisitor createVisitor(ClassVisitor cv) {
-				Log.info("Trying to patch MapGenStructure (class: %s)", name);
+        OpenModsCorePlugin.log.info("Trying to patch MapGenStructure (class: %s)", name);
 				return new MapGenStructureVisitor(name, cv);
 			}
 		});

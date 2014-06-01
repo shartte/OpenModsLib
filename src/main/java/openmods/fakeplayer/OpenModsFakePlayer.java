@@ -1,5 +1,7 @@
 package openmods.fakeplayer;
 
+import com.mojang.authlib.GameProfile;
+import cpw.mods.fml.common.eventhandler.Event;
 import net.minecraft.block.Block;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.item.Item;
@@ -7,9 +9,9 @@ import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
-import net.minecraftforge.common.FakePlayer;
-import net.minecraftforge.common.ForgeDirection;
-import net.minecraftforge.event.Event;
+import net.minecraft.world.WorldServer;
+import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
@@ -19,15 +21,24 @@ import openmods.utils.MathUtils;
 
 import com.google.common.base.Preconditions;
 
+import java.util.UUID;
+
 public class OpenModsFakePlayer extends FakePlayer {
 
-	OpenModsFakePlayer(World world, int id) {
-		super(world, String.format("OpenModsFakePlayer-%03d", id));
-	}
+	OpenModsFakePlayer(WorldServer world, int id) {
+		super(world, fakeProfile(id));
+  }
+
+  private static GameProfile fakeProfile(int id) {
+    // Game Profile IDs seem to be GUIDs
+    String uuid = UUID.randomUUID().toString();
+    String name = String.format("OpenModsFakePlayer-%03d", id);
+    return new GameProfile(uuid, name);
+  }
 
 	@Override
 	public void setDead() {
-		inventory.clearInventory(-1, -1);
+		inventory.clearInventory(null, -1);
 		isDead = true;
 	}
 
@@ -68,7 +79,7 @@ public class OpenModsFakePlayer extends FakePlayer {
 
 		setRotation(pitch, hue);
 
-		inventory.clearInventory(-1, -1);
+		inventory.clearInventory(null, -1);
 		inventory.addItemStackToInventory(itemStack);
 		rightClick(
 				inventory.getCurrentItem(),
@@ -86,7 +97,7 @@ public class OpenModsFakePlayer extends FakePlayer {
 		setPosition(x + 0.5F, y - 1.5, z + 0.5F);
 		Preconditions.checkArgument(direction == ForgeDirection.DOWN, "Other directions than down is not implemented");
 		setRotation(0, 90);
-		EntityItem entityItem = dropPlayerItem(itemStack);
+		EntityItem entityItem = dropPlayerItemWithRandomChoice(itemStack, false);
 		entityItem.motionX = 0;
 		entityItem.motionY = 0;
 		entityItem.motionZ = 0;
@@ -104,9 +115,8 @@ public class OpenModsFakePlayer extends FakePlayer {
 
 		if (usedItem.onItemUseFirst(itemStack, this, worldObj, x, y, z, opposite, deltaX, deltaY, deltaZ)) { return true; }
 
-		if (event.useBlock != Event.Result.DENY && (isSneaking() || usedItem.shouldPassSneakingClickToBlock(worldObj, x, y, z))) {
-			int blockId = worldObj.getBlockId(x, y, z);
-			Block block = Block.blocksList[blockId];
+		if (event.useBlock != Event.Result.DENY && (isSneaking() || usedItem.doesSneakBypassUse(worldObj, x, y, z, this))) {
+			Block block = worldObj.getBlock(x, y, z);
 			if (block != null) try {
 				if (block.onBlockActivated(worldObj, x, y, z, this, opposite, deltaX, deltaY, deltaZ)) return true;
 			} catch (Throwable t) {

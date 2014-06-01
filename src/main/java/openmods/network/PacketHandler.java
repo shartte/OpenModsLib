@@ -7,39 +7,17 @@ import net.minecraft.entity.EntityTracker;
 import net.minecraft.entity.EntityTrackerEntry;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.network.INetworkManager;
-import net.minecraft.network.packet.Packet250CustomPayload;
 import net.minecraft.server.management.PlayerManager;
 import net.minecraft.util.IntHashMap;
 import net.minecraft.world.WorldServer;
-import openmods.Log;
-import openmods.OpenMods;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
-import cpw.mods.fml.common.network.IPacketHandler;
-import cpw.mods.fml.common.network.Player;
 import cpw.mods.fml.relauncher.ReflectionHelper;
 
-public class PacketHandler implements IPacketHandler {
-
-	public final static String CHANNEL_SYNC = "OpenMods|S";
-	public final static String CHANNEL_EVENTS = "OpenMods|E";
-
-	@Override
-	public void onPacketData(INetworkManager manager, Packet250CustomPayload packet, Player player) {
-		try {
-			if (packet.channel.equals(CHANNEL_SYNC)) {
-				OpenMods.syncableManager.handlePacket(packet);
-			} else if (packet.channel.equals(CHANNEL_EVENTS)) {
-				EventPacketManager.handlePacket(packet, manager, player);
-			}
-		} catch (Exception e) {
-			Log.warn(e, "Error while handling data on channel %s from player '%s'", packet.channel, player);
-		}
-	}
+public class PacketHandler {
 
 	public static Set<EntityPlayer> getPlayersWatchingChunk(WorldServer world, int chunkX, int chunkZ) {
 		PlayerManager manager = world.getPlayerManager();

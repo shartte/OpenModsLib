@@ -10,6 +10,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraftforge.common.util.Constants;
 import openmods.api.IInventoryCallback;
 
 public class GenericInventory implements IInventory {
@@ -33,7 +34,7 @@ public class GenericInventory implements IInventory {
 	}
 
 	@Override
-	public void closeChest() {}
+	public void closeInventory() {}
 
 	@Override
 	public ItemStack decrStackSize(int par1, int par2)
@@ -67,7 +68,7 @@ public class GenericInventory implements IInventory {
 	}
 
 	@Override
-	public String getInvName() {
+	public String getInventoryName() {
 		return this.inventoryTitle;
 	}
 
@@ -97,8 +98,8 @@ public class GenericInventory implements IInventory {
 	}
 
 	@Override
-	public boolean isInvNameLocalized() {
-		return isInvNameLocalized;
+	public boolean hasCustomInventoryName() {
+		return !isInvNameLocalized;
 	}
 
 	public boolean isItem(int slot, Item item) {
@@ -122,7 +123,7 @@ public class GenericInventory implements IInventory {
 	}
 
 	@Override
-	public void openChest() {}
+	public void openInventory() {}
 
 	public void clearAndSetSlotCount(int amount) {
 		this.slotsCount = amount;
@@ -134,10 +135,10 @@ public class GenericInventory implements IInventory {
 		if (tag.hasKey("size")) {
 			this.slotsCount = tag.getInteger("size");
 		}
-		NBTTagList nbttaglist = tag.getTagList("Items");
+		NBTTagList nbttaglist = tag.getTagList("Items", Constants.NBT.TAG_COMPOUND);
 		inventoryContents = new ItemStack[slotsCount];
 		for (int i = 0; i < nbttaglist.tagCount(); i++) {
-			NBTTagCompound stacktag = (NBTTagCompound)nbttaglist.tagAt(i);
+			NBTTagCompound stacktag = nbttaglist.getCompoundTagAt(i);
 			int j = stacktag.getByte("Slot");
 			if (j >= 0 && j < inventoryContents.length) {
 				inventoryContents[j] = ItemStack.loadItemStackFromNBT(stacktag);
@@ -174,7 +175,7 @@ public class GenericInventory implements IInventory {
 	 * This bastard never even gets called, so don't rely on it.
 	 */
 	@Override
-	public void onInventoryChanged() {
+	public void markDirty() {
 		onInventoryChanged(0);
 	}
 

@@ -22,10 +22,9 @@ public class EntityUtils {
 
 		if (entity == null || entity.worldObj == null) { return null; }
 
-		return entity.worldObj.rayTraceBlocks_do_do(
+    // TODO: When porting to 1.7, removed parameters here. Not clear what they did.
+		return entity.worldObj.rayTraceBlocks(
 				getCurrentPosition(entity),
-				getPredictedPosition(entity),
-				false,
-				true);
+				getPredictedPosition(entity));
 	}
 }

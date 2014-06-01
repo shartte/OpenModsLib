@@ -14,7 +14,7 @@ public class ItemUtils {
 	public static ItemStack consumeItem(ItemStack stack) {
 		if (stack.stackSize == 1) {
 			final Item item = stack.getItem();
-			if (item.hasContainerItem()) return item.getContainerItemStack(stack);
+			if (item.hasContainerItem(stack)) return item.getContainerItem(stack);
 			return null;
 		}
 		stack.splitStack(1);
@@ -23,7 +23,8 @@ public class ItemUtils {
 	}
 
 	public static NBTTagCompound getItemTag(ItemStack stack) {
-		if (stack.stackTagCompound == null) stack.stackTagCompound = new NBTTagCompound("tag");
+		if (stack.stackTagCompound == null)
+      stack.stackTagCompound = new NBTTagCompound(); // TODO Removed "tag" parameter, should not be needed
 
 		return stack.stackTagCompound;
 	}
@@ -31,7 +32,8 @@ public class ItemUtils {
 	public static Integer getInt(ItemStack stack, String tagName) {
 		NBTTagCompound tag = getItemTag(stack);
 		NBTBase data = tag.getTag(tagName);
-		return (data != null)? ((NBTTagInt)data).data : null;
+    // TODO: Obfuscated getter for "data"
+		return (data != null)? ((NBTTagInt)data).func_150287_d() : null;
 	}
 
 	public static EntityItem createDrop(Entity dropper, ItemStack is) {

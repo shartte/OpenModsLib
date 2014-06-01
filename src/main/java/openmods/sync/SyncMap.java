@@ -1,100 +1,66 @@
 package openmods.sync;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.Map.Entry;
 
+import com.google.common.base.Throwables;
+import cpw.mods.fml.client.FMLClientHandler;
+import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
+import cpw.mods.fml.relauncher.Side;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.Packet131MapData;
+import net.minecraft.network.Packet;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
-import openmods.LibConfig;
 import openmods.Log;
-import openmods.OpenMods;
-import openmods.network.PacketLogger;
-import openmods.network.TinyPacketHandler;
 import openmods.utils.ByteUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.*;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
-
-import cpw.mods.fml.common.network.PacketDispatcher;
-import cpw.mods.fml.common.network.Player;
 
 public abstract class SyncMap<H extends ISyncHandler> {
 
+  /**
+   * We use this channel to exchange sync messages between client and server.
+   */
+  private static final SimpleNetworkWrapper SYNC_CHANNEL = new SimpleNetworkWrapper("OpenModsSync");
+
 	private static final int MAX_OBJECT_NUM = 16;
+
+  static {
+    SYNC_CHANNEL.registerMessage(EntitySyncMessageHandler.class, EntitySyncMessage.class, 1, Side.CLIENT);
+    SYNC_CHANNEL.registerMessage(EntitySyncMessageHandler.class, EntitySyncMessage.class, 1, Side.SERVER);
+    SYNC_CHANNEL.registerMessage(TileEntitySyncMessageHandler.class, TileEntitySyncMessage.class, 2, Side.CLIENT);
+    SYNC_CHANNEL.registerMessage(TileEntitySyncMessageHandler.class, TileEntitySyncMessage.class, 2, Side.SERVER);
+  }
 
 	public enum HandlerType {
 		TILE_ENTITY {
-
 			@Override
-			public ISyncHandler findHandler(World world, DataInput input) throws IOException {
-				int x = input.readInt();
-				int y = input.readInt();
-				int z = input.readInt();
-				if (world != null) {
-					if (world.blockExists(x, y, z)) {
-						TileEntity tile = world.getBlockTileEntity(x, y, z);
-						if (tile instanceof ISyncHandler) return (ISyncHandler)tile;
-					}
-				}
-
-				Log.warn("Invalid handler info: can't find ISyncHandler TE @ (%d,%d,%d)", x, y, z);
-				return null;
-			}
-
-			@Override
-			public void writeHandlerInfo(ISyncHandler handler, DataOutput output) throws IOException {
+      public AbstractSyncMessage createMessage(ISyncHandler handler) {
 				try {
-					TileEntity te = (TileEntity)handler;
-					output.writeInt(te.xCoord);
-					output.writeInt(te.yCoord);
-					output.writeInt(te.zCoord);
+					return TileEntitySyncMessage.fromTileEntity((TileEntity)handler);
 				} catch (ClassCastException e) {
 					throw new RuntimeException("Invalid usage of handler type", e);
 				}
 			}
-
 		},
 		ENTITY {
-
 			@Override
-			public ISyncHandler findHandler(World world, DataInput input) throws IOException {
-				int entityId = input.readInt();
-				Entity entity = world.getEntityByID(entityId);
-				if (entity instanceof ISyncHandler)
-				return (ISyncHandler)entity;
-
-				Log.warn("Invalid handler info: can't find ISyncHandler entity id %d", entityId);
-				return null;
-			}
-
-			@Override
-			public void writeHandlerInfo(ISyncHandler handler, DataOutput output) throws IOException {
+			public AbstractSyncMessage createMessage(ISyncHandler handler) {
 				try {
-					Entity e = (Entity)handler;
-					output.writeInt(e.entityId);
+					return EntitySyncMessage.fromEntity((Entity)handler);
 				} catch (ClassCastException e) {
 					throw new RuntimeException("Invalid usage of handler type", e);
 				}
 			}
-
 		};
 
-		public abstract ISyncHandler findHandler(World world, DataInput input) throws IOException;
-
-		public abstract void writeHandlerInfo(ISyncHandler handler, DataOutput output) throws IOException;
-
-		private static final HandlerType[] TYPES = values();
+    public abstract AbstractSyncMessage createMessage(ISyncHandler handler);
 	}
 
 	protected final H handler;
@@ -125,45 +91,27 @@ public abstract class SyncMap<H extends ISyncHandler> {
 		return index;
 	}
 
-	public Set<ISyncableObject> readFromStream(DataInput dis) throws IOException {
-		short mask = dis.readShort();
-		Set<ISyncableObject> changes = Sets.newIdentityHashSet();
-		int currentBit = 0;
+	public Set<ISyncableObject> readFromMessage(AbstractSyncMessage message) throws IOException {
 
-		while (mask != 0) {
-			if ((mask & 1) != 0) {
-				final ISyncableObject object = objects[currentBit];
-				if (object != null) {
-					object.readFromStream(dis);
-					changes.add(object);
-					object.resetChangeTimer(getWorld());
-				}
-			}
-			currentBit++;
-			mask >>= 1;
-		}
-		return changes;
-	}
+    DataInput dis = new DataInputStream(new ByteArrayInputStream(message.syncData));
 
-	public int writeToStream(DataOutput dos, boolean regardless) throws IOException {
-		int count = 0;
-		short mask = 0;
-		for (int i = 0; i < index; i++) {
-			final ISyncableObject object = objects[i];
-			mask = ByteUtils.set(mask, i, object != null
-					&& (regardless || object.isDirty()));
-		}
-		dos.writeShort(mask);
-		for (int i = 0; i < index; i++) {
-			final ISyncableObject object = objects[i];
-			if (object != null && (regardless || object.isDirty())) {
-				object.writeToStream(dos, regardless);
-				object.resetChangeTimer(getWorld());
-				count++;
-			}
-		}
+    short mask = dis.readShort();
+    Set<ISyncableObject> changes = Sets.newIdentityHashSet();
+    int currentBit = 0;
 
-		return count;
+    while (mask != 0) {
+      if ((mask & 1) != 0) {
+        final ISyncableObject object = objects[currentBit];
+        if (object != null) {
+          object.readFromStream(dis);
+          changes.add(object);
+          object.resetChangeTimer(getWorld());
+        }
+      }
+      currentBit++;
+      mask >>= 1;
+    }
+    return changes;
 	}
 
 	public void markAllAsClean() {
@@ -195,15 +143,15 @@ public abstract class SyncMap<H extends ISyncHandler> {
 
 			try {
 				for (EntityPlayer player : players) {
-					if (knownUsers.contains(player.entityId)) {
+					if (knownUsers.contains(player.getEntityId())) {
 						if (hasChanges) {
 							if (changePacket == null) changePacket = createPacket(false, false);
-							OpenMods.proxy.sendPacketToPlayer((Player)player, changePacket);
+              ((EntityPlayerMP) player).playerNetServerHandler.sendPacket(changePacket);
 						}
 					} else {
-						knownUsers.add(player.entityId);
+						knownUsers.add(player.getEntityId());
 						if (fullPacket == null) fullPacket = createPacket(true, false);
-						OpenMods.proxy.sendPacketToPlayer((Player)player, fullPacket);
+            ((EntityPlayerMP) player).playerNetServerHandler.sendPacket(fullPacket);
 					}
 				}
 			} catch (IOException e) {
@@ -211,7 +159,8 @@ public abstract class SyncMap<H extends ISyncHandler> {
 			}
 		} else if (hasChanges) {
 			try {
-				OpenMods.proxy.sendPacketToServer(createPacket(false, true));
+        Packet packet = createPacket(false, true);
+        FMLClientHandler.instance().getClient().thePlayer.sendQueue.addToSendQueue(packet);
 			} catch (IOException e) {
 				Log.warn(e, "IOError during upstream sync");
 			}
@@ -232,33 +181,61 @@ public abstract class SyncMap<H extends ISyncHandler> {
 	}
 
 	public Packet createPacket(boolean fullPacket, boolean toServer) throws IOException {
-		ByteArrayDataOutput bos = ByteStreams.newDataOutput();
-		bos.writeBoolean(toServer);
-		if (toServer) {
-			int dimension = getWorld().provider.dimensionId;
-			bos.writeInt(dimension);
+    AbstractSyncMessage message = createMessage(fullPacket, toServer);
+		return SYNC_CHANNEL.getPacketFrom(message);
+	}
+
+  /*
+    Creates a byte array that describes the changes to this object.
+   */
+  private byte[] createChangeData(boolean fullData) {
+    ByteArrayOutputStream bout = new ByteArrayOutputStream();
+    DataOutput dout = new DataOutputStream(bout);
+
+    try {
+      short mask = 0;
+      for (int i = 0; i < index; i++) {
+        final ISyncableObject object = objects[i];
+        mask = ByteUtils.set(mask, i, object != null
+            && (fullData || object.isDirty()));
+      }
+      dout.writeShort(mask);
+      for (int i = 0; i < index; i++) {
+        final ISyncableObject object = objects[i];
+        if (object != null && (fullData || object.isDirty())) {
+          object.writeToStream(dout, fullData);
+        }
+      }
+    } catch (IOException e) {
+      throw Throwables.propagate(e);
+    }
+
+    return bout.toByteArray();
+  }
+
+  private AbstractSyncMessage createMessage(boolean fullPacket, boolean toServer) {
+    HandlerType type = getHandlerType();
+    AbstractSyncMessage message = type.createMessage(handler);
+
+    message.toServer = toServer;
+    if (toServer) {
+      message.dimensionId = getWorld().provider.dimensionId;
 		}
-		HandlerType type = getHandlerType();
-		ByteUtils.writeVLI(bos, type.ordinal());
-		type.writeHandlerInfo(handler, bos);
-		int count = writeToStream(bos, fullPacket);
-		Packet131MapData packet = PacketDispatcher.getTinyPacket(OpenMods.instance, TinyPacketHandler.TYPE_SYNC, bos.toByteArray());
+    message.fullData = fullPacket;
+    message.syncData = createChangeData(fullPacket);
 
-		if (LibConfig.logPackets) PacketLogger.log(packet, false, handler.toString(), handler.getClass().toString(), Integer.toString(count));
-		return packet;
-	}
+    resetChangeTimers(fullPacket);
+    return message;
+  }
 
-	public static ISyncHandler findSyncMap(World world, DataInput input) throws IOException {
-		int handlerTypeId = ByteUtils.readVLI(input);
-
-		// If this happens, abort! Serious bug!
-		Preconditions.checkPositionIndex(handlerTypeId, HandlerType.TYPES.length, "handler type");
-
-		HandlerType handlerType = HandlerType.TYPES[handlerTypeId];
-
-		ISyncHandler handler = handlerType.findHandler(world, input);
-		return handler;
-	}
+  private void resetChangeTimers(boolean fullData) {
+    for (int i = 0; i < index; i++) {
+      final ISyncableObject object = objects[i];
+      if (object != null && (fullData || object.isDirty())) {
+        object.resetChangeTimer(getWorld());
+      }
+    }
+  }
 
 	private static final Map<Class<? extends ISyncHandler>, List<Field>> syncedFields = Maps.newIdentityHashMap();
 

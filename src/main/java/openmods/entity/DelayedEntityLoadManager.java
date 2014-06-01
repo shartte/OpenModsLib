@@ -4,7 +4,7 @@ import java.util.*;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
-import net.minecraftforge.event.ForgeSubscribe;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 
 import com.google.common.base.Supplier;
@@ -26,10 +26,10 @@ public class DelayedEntityLoadManager {
 				}
 			});
 
-	@ForgeSubscribe
+	@SubscribeEvent
 	public void onEntityCreate(EntityJoinWorldEvent evt) {
 		final Entity entity = evt.entity;
-		for (IEntityLoadListener callback : delayedLoads.removeAll(entity.entityId))
+		for (IEntityLoadListener callback : delayedLoads.removeAll(entity.getEntityId()))
 			callback.onEntityLoaded(entity);
 	}
 

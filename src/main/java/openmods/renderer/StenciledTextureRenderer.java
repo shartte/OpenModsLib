@@ -1,7 +1,10 @@
 package openmods.renderer;
 
+import cpw.mods.fml.client.FMLClientHandler;
 import net.minecraft.client.renderer.RenderGlobal;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.client.MinecraftForgeClient;
 import openmods.utils.render.RenderUtils;
 
 import org.lwjgl.opengl.GL11;
@@ -33,7 +36,8 @@ public class StenciledTextureRenderer extends StencilRendererHandler {
 		GL11.glStencilOp(GL11.GL_KEEP, GL11.GL_KEEP, GL11.GL_KEEP);
 		GL11.glStencilFunc(GL11.GL_EQUAL, stencilMask, stencilMask);
 
-		context.renderEngine.bindTexture(texture);
+    TextureManager renderEngine = FMLClientHandler.instance().getClient().renderEngine;
+    renderEngine.bindTexture(texture);
 
 		RenderUtils.disableLightmap();
 		GL11.glDisable(GL11.GL_LIGHTING);

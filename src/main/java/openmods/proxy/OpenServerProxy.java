@@ -5,23 +5,17 @@ import java.io.File;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.network.packet.Packet;
+import net.minecraft.network.Packet;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
 import openmods.gui.CommonGuiHandler;
 import cpw.mods.fml.common.network.IGuiHandler;
-import cpw.mods.fml.common.network.Player;
 
 public class OpenServerProxy implements IOpenModsProxy {
 
 	@Override
 	public boolean isServerOnly() {
-		return true;
-	}
-
-	@Override
-	public boolean isServerThread() {
 		return true;
 	}
 
@@ -61,15 +55,6 @@ public class OpenServerProxy implements IOpenModsProxy {
 	public World getServerWorld(int id) {
 		return DimensionManager.getWorld(id);
 	}
-
-	@Override
-	public void sendPacketToPlayer(Player player, Packet packet) {
-		if (player instanceof EntityPlayerMP) ((EntityPlayerMP)player).playerNetServerHandler.sendPacketToPlayer(packet);
-		else throw new UnsupportedOperationException("HOW DO I PACKET?");
-	}
-
-	@Override
-	public void sendPacketToServer(Packet packet) {}
 
 	@Override
 	public File getMinecraftDir() {
